@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/CopyButton";
+import ReactMarkdown from "react-markdown";
 
 interface ContentCardProps {
     title: string;
@@ -42,10 +43,10 @@ export function ContentCard({
                         <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
                             <div
                                 className={`h-full rounded-full transition-all duration-500 ${isOverLimit
-                                        ? "bg-red-500"
-                                        : charCount > (maxChars || 160) * 0.8
-                                            ? "bg-yellow-500"
-                                            : "bg-green-500"
+                                    ? "bg-red-500"
+                                    : charCount > (maxChars || 160) * 0.8
+                                        ? "bg-yellow-500"
+                                        : "bg-green-500"
                                     }`}
                                 style={{
                                     width: `${Math.min((charCount / (maxChars || 160)) * 100, 100)}%`,
@@ -62,8 +63,8 @@ export function ContentCard({
                 )}
             </CardHeader>
             <CardContent className="relative">
-                <div className="rounded-lg bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap break-words font-normal text-foreground/90">
-                    {content}
+                <div className="rounded-lg bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap break-words font-normal text-foreground/90 prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/20 prose-code:text-indigo-300">
+                    <ReactMarkdown>{content}</ReactMarkdown>
                 </div>
             </CardContent>
         </Card>
