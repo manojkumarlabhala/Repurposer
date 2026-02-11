@@ -81,7 +81,8 @@ export const urlInputSchema = z.object({
         .refine((url) => !isPrivateUrl(url), {
             message: "Private or internal URLs are not allowed",
         }),
-    tone: z.enum(["professional", "bold", "analytical"]).optional().default("professional"),
+    tone: z.enum(["professional", "bold", "analytical", "casual"]).optional().default("professional"),
+    audience: z.enum(["B2B", "B2C", "general"]).optional().default("general"),
     length: z.enum(["short", "medium", "long"]).optional().default("medium"),
     platforms: z.array(z.enum(["linkedin", "twitter", "youtube", "seo"])).optional().default(["linkedin", "twitter", "youtube", "seo"]),
 });

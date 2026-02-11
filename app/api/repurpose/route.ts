@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { url, tone, length, platforms } = validation.data;
+        const { url, tone, length, platforms, audience } = validation.data;
 
         // Rate limiting
         const clientIp = getClientIp(request);
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         // Generate repurposed content
         let repurposedContent;
         try {
-            repurposedContent = await generateRepurposedContent(extractedContent, tone, length, platforms);
+            repurposedContent = await generateRepurposedContent(extractedContent, tone, length, platforms, audience);
         } catch (error) {
             incrementAnalytics(false);
             const message = error instanceof Error ? error.message : "AI content generation failed";

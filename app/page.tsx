@@ -6,17 +6,20 @@ import { Sparkles, Zap, AlertCircle, RotateCcw } from "lucide-react";
 import { UrlForm } from "@/components/UrlForm";
 import { ResultSection } from "@/components/ResultSection";
 import { ContentLoader } from "@/components/Loader";
+import { HistoryList } from "@/components/HistoryList";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import type { RepurposedContent, ToneOption, LengthOption, PlatformOption, ApiResponse } from "@/types";
+import type { RepurposedContent, ToneOption, LengthOption, PlatformOption, ApiResponse, AudienceOption, HistoryItem } from "@/types";
 
 const LOCAL_STORAGE_KEY = "repurposer_last_output";
+const HISTORY_STORAGE_KEY = "repurposer_history";
 
 async function repurposeContent(params: {
     url: string;
     tone: ToneOption;
     length: LengthOption;
     platforms: PlatformOption[];
+    audience: AudienceOption;
 }): Promise<RepurposedContent> {
     const response = await fetch("/api/repurpose", {
         method: "POST",
@@ -38,8 +41,10 @@ export default function HomePage() {
     const [stage, setStage] = useState<"idle" | "extracting" | "generating">("idle");
     const [lastUrl, setLastUrl] = useState<string>("");
     const [lastTone, setLastTone] = useState<ToneOption>("professional");
+    const [lastAudience, setLastAudience] = useState<AudienceOption>("general");
     const [lastLength, setLastLength] = useState<LengthOption>("medium");
     const [lastPlatforms, setLastPlatforms] = useState<PlatformOption[]>(["linkedin", "twitter", "seo", "youtube"]);
+    const [history, setHistory] = useState<HistoryItem[]>([]);
     const { toast } = useToast();
 
     const mutation = useMutation({
@@ -53,6 +58,7 @@ export default function HomePage() {
         onSuccess: (data) => {
             setResult(data);
             saveToLocalStorage(data, lastUrl);
+            addToHistory(data, lastUrl, lastTone, lastLength, lastPlatforms, lastAudience);
             toast({
                 title: "Content generated!",
                 description: "Your blog has been repurposed into platform-native content",
@@ -70,7 +76,7 @@ export default function HomePage() {
         },
     });
 
-    // Load last output from localStorage
+    // Load last output and history from localStorage
     useEffect(() => {
         try {
             const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -80,6 +86,11 @@ export default function HomePage() {
                     setResult(parsed.data);
                     setLastUrl(parsed.url || "");
                 }
+            }
+
+            const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (savedHistory) {
+                setHistory(JSON.parse(savedHistory));
             }
         } catch {
             // Ignore localStorage errors
@@ -100,17 +111,64 @@ export default function HomePage() {
         []
     );
 
-    const handleSubmit = (url: string, tone: ToneOption, length: LengthOption, platforms: PlatformOption[]) => {
+    const addToHistory = (
+        data: RepurposedContent,
+        url: string,
+        tone: ToneOption,
+        length: LengthOption,
+        platforms: PlatformOption[],
+        audience: AudienceOption
+    ) => {
+        const newItem: HistoryItem = {
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            url,
+            originalTitle: data.youtube?.title || url, // Fallback if no title
+            repurposedContent: data,
+            requestData: { url, tone, length, platforms, audience },
+        };
+
+        const newHistory = [newItem, ...history].slice(0, 50); // Keep last 50
+        setHistory(newHistory);
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+    };
+
+    const clearHistory = () => {
+        setHistory([]);
+        localStorage.removeItem(HISTORY_STORAGE_KEY);
+    };
+
+    const deleteHistoryItem = (id: string) => {
+        const newHistory = history.filter((item) => item.id !== id);
+        setHistory(newHistory);
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+    };
+
+    const restoreHistoryItem = (item: HistoryItem) => {
+        setResult(item.repurposedContent);
+        setLastUrl(item.url);
+        setLastTone(item.requestData.tone);
+        setLastLength(item.requestData.length);
+        setLastPlatforms(item.requestData.platforms || []);
+        setLastAudience(item.requestData.audience);
+        toast({
+            title: "History Restored",
+            description: "Loaded content from history",
+        });
+    };
+
+    const handleSubmit = (url: string, tone: ToneOption, length: LengthOption, platforms: PlatformOption[], audience: AudienceOption) => {
         setLastUrl(url);
         setLastTone(tone);
         setLastLength(length);
         setLastPlatforms(platforms);
-        mutation.mutate({ url, tone, length, platforms });
+        setLastAudience(audience);
+        mutation.mutate({ url, tone, length, platforms, audience });
     };
 
     const handleRegenerate = () => {
         if (lastUrl) {
-            mutation.mutate({ url: lastUrl, tone: lastTone, length: lastLength, platforms: lastPlatforms });
+            mutation.mutate({ url: lastUrl, tone: lastTone, length: lastLength, platforms: lastPlatforms, audience: lastAudience });
         }
     };
 
@@ -126,34 +184,25 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10">
-                {/* Header */}
-                <header className="border-b border-border/40 bg-background/60 backdrop-blur-xl sticky top-0 z-50">
-                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg blur-sm opacity-75" />
-                                <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg p-2">
-                                    <Zap className="h-5 w-5 text-white" />
-                                </div>
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-                                    Repurposer
-                                </h1>
-                                <p className="text-[10px] text-muted-foreground -mt-0.5 hidden sm:block">
-                                    AI-Powered Content Transformation
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-center gap-2">
-                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs text-green-500 font-medium">AI Online</span>
-                            </div>
+
+                {/* Header */}
+                {/* App Controls / Toolbar */}
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs text-green-500 font-medium">AI Online</span>
                         </div>
                     </div>
-                </header>
+
+                    <HistoryList
+                        currentHistory={history}
+                        onSelect={restoreHistoryItem}
+                        onClearHistory={clearHistory}
+                        onDeleteItem={deleteHistoryItem}
+                    />
+                </div>
 
                 {/* Main Content */}
                 <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

@@ -30,7 +30,7 @@ export interface RepurposedContent {
 
 export type PlatformOption = "linkedin" | "twitter" | "youtube" | "seo";
 
-export type ToneOption = "professional" | "bold" | "analytical";
+export type ToneOption = "professional" | "bold" | "analytical" | "casual";
 export type LengthOption = "short" | "medium" | "long";
 export type ModelOption =
     | "auto"
@@ -48,9 +48,22 @@ export interface ApiResponse {
     stack?: string;
 }
 
+
+export type AudienceOption = "B2B" | "B2C" | "general";
+
 export interface RepurposeRequest {
     url: string;
     tone: ToneOption;
+    audience: AudienceOption;
     length: LengthOption;
     platforms?: PlatformOption[];
+}
+
+export interface HistoryItem {
+    id: string;
+    date: string;
+    url: string;
+    originalTitle: string;
+    repurposedContent: RepurposedContent;
+    requestData: RepurposeRequest;
 }

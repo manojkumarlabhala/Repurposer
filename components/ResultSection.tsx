@@ -1,6 +1,6 @@
 "use client";
 
-import { Linkedin, Twitter, Search, Youtube, Copy, Check } from "lucide-react";
+import { Linkedin, Twitter, Search, Youtube, Copy, Check, Download, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContentCard } from "@/components/ContentCard";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,44 @@ export function ResultSection({ data }: ResultSectionProps) {
         }
     };
 
+    const downloadContent = (format: "markdown" | "text") => {
+        let content = "";
+
+        if (data.linkedin) {
+            content += format === "markdown"
+                ? `## LinkedIn Posts\n\n### Educational\n${data.linkedin.educational}\n\n### Contrarian\n${data.linkedin.controversial}\n\n### Personal\n${data.linkedin.personal}\n\n`
+                : `=== LINKEDIN ===\n\n[Educational]\n${data.linkedin.educational}\n\n[Contrarian]\n${data.linkedin.controversial}\n\n[Personal]\n${data.linkedin.personal}\n\n`;
+        }
+
+        if (data.twitter_hooks) {
+            content += format === "markdown"
+                ? `## Twitter Hooks\n\n1. ${data.twitter_hooks[0]}\n2. ${data.twitter_hooks[1]}\n3. ${data.twitter_hooks[2]}\n\n`
+                : `=== TWITTER ===\n\n1. ${data.twitter_hooks[0]}\n2. ${data.twitter_hooks[1]}\n3. ${data.twitter_hooks[2]}\n\n`;
+        }
+
+        if (data.meta_description) {
+            content += format === "markdown"
+                ? `## SEO Meta Description\n\n${data.meta_description}\n\n`
+                : `=== SEO ===\n${data.meta_description}\n\n`;
+        }
+
+        if (data.youtube) {
+            content += format === "markdown"
+                ? `## YouTube Video\n\n**Title:** ${data.youtube.title}\n\n**Description:**\n${data.youtube.description}\n`
+                : `=== YOUTUBE ===\nTitle: ${data.youtube.title}\nDescription:\n${data.youtube.description}\n`;
+        }
+
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `repurposed-content-${new Date().toISOString().slice(0, 10)}.${format === "markdown" ? "md" : "txt"}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="w-full space-y-6 animate-slide-up">
             {/* Header */}
@@ -73,18 +111,41 @@ export function ResultSection({ data }: ResultSectionProps) {
                         Click any copy button to copy to clipboard
                     </p>
                 </div>
-                <Button
-                    onClick={copyAllContent}
-                    variant="outline"
-                    className="gap-2 border-primary/30 hover:bg-primary/10"
-                >
-                    {copiedAll ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                        <Copy className="h-4 w-4" />
-                    )}
-                    {copiedAll ? "Copied!" : "Copy All"}
-                </Button>
+                {/* Export Buttons */}
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => downloadContent("text")}
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 px-2 sm:px-4"
+                        title="Download Text"
+                    >
+                        <FileText className="h-4 w-4" />
+                        <span className="hidden sm:inline">TXT</span>
+                    </Button>
+                    <Button
+                        onClick={() => downloadContent("markdown")}
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 px-2 sm:px-4"
+                        title="Download Markdown"
+                    >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">MD</span>
+                    </Button>
+                    <Button
+                        onClick={copyAllContent}
+                        variant="outline"
+                        className="gap-2 border-primary/30 hover:bg-primary/10"
+                    >
+                        {copiedAll ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                            <Copy className="h-4 w-4" />
+                        )}
+                        {copiedAll ? "Copied!" : "Copy All"}
+                    </Button>
+                </div>
             </div>
 
             {/* Tabs */}

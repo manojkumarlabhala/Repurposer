@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/Providers";
+import { Footer } from "@/components/Footer";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -51,7 +53,7 @@ export const metadata: Metadata = {
         },
     },
     icons: {
-        icon: "/favicon.ico",
+        icon: "/favicon.svg",
         apple: "/apple-touch-icon.png",
     },
 };
@@ -65,7 +67,9 @@ export default function RootLayout({
         <html lang="en" className="dark">
             <body className={inter.className}>
                 <Providers>
+                    <SiteHeader />
                     {children}
+                    <Footer />
                 </Providers>
                 <Toaster />
             </body>

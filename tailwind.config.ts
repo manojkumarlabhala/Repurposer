@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss";
+import type { Config } from "tailwindcss"; // Verified type import
 
 const config: Config = {
     darkMode: ["class"],
@@ -75,6 +75,16 @@ const config: Config = {
                     "0%, 100%": { boxShadow: "0 0 15px rgba(139, 92, 246, 0.3)" },
                     "50%": { boxShadow: "0 0 30px rgba(139, 92, 246, 0.6)" },
                 },
+                "gradient-x": {
+                    "0%, 100%": {
+                        "background-size": "200% 200%",
+                        "background-position": "left center",
+                    },
+                    "50%": {
+                        "background-size": "200% 200%",
+                        "background-position": "right center",
+                    },
+                },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
@@ -83,6 +93,7 @@ const config: Config = {
                 "fade-in": "fade-in 0.5s ease-out",
                 "slide-up": "slide-up 0.6s ease-out",
                 pulse_glow: "pulse_glow 2s ease-in-out infinite",
+                "gradient-x": "gradient-x 3s ease infinite",
             },
         },
     },

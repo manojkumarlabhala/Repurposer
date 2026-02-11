@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { repurposedContentSchema } from "./validators";
-import type { RepurposedContent, ExtractedContent, ToneOption, LengthOption, PlatformOption } from "@/types";
+import type { RepurposedContent, ExtractedContent, ToneOption, LengthOption, PlatformOption, AudienceOption } from "@/types";
 
 const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
@@ -13,6 +13,14 @@ const TONE_INSTRUCTIONS: Record<ToneOption, string> = {
     bold: "Write in a bold, provocative, attention-grabbing tone. Use strong opinions, hot takes, and challenge conventional wisdom. Be contrarian but substantive.",
     analytical:
         "Write in a data-driven, analytical tone. Focus on frameworks, mental models, evidence-based insights, and logical reasoning. Be precise and structured.",
+    casual:
+        "Write in a friendly, conversational, and relatable tone. Use simple language, humor if appropriate, and speak directly to the reader like a peer.",
+};
+
+const AUDIENCE_INSTRUCTIONS: Record<AudienceOption, string> = {
+    B2B: "Target a business audience (engineers, executives, founders). Focus on ROI, efficiency, scalability, and strategic value.",
+    B2C: "Target a general consumer audience. Focus on lifestyle, personal benefits, emotional connection, and ease of use.",
+    general: "Target a broad, general audience. Avoid jargon, keep concepts accessible, and focus on clear communication.",
 };
 
 const LENGTH_INSTRUCTIONS: Record<LengthOption, string> = {
@@ -23,7 +31,7 @@ const LENGTH_INSTRUCTIONS: Record<LengthOption, string> = {
     long: "Create detailed, long-form content. LinkedIn posts 1200-2000 characters. Twitter hooks can use full 280 characters. YouTube description 250-350 words.",
 };
 
-function buildSystemPrompt(tone: ToneOption, length: LengthOption, platforms: PlatformOption[]): string {
+function buildSystemPrompt(tone: ToneOption, length: LengthOption, platforms: PlatformOption[], audience: AudienceOption): string {
     const platformInstructions: string[] = [];
 
     if (platforms.includes("linkedin")) {
@@ -54,6 +62,8 @@ CRITICAL RULES:
 - If the author is known, mimic their potential voice or credit them appropriately where natural.
 
 TONE: ${TONE_INSTRUCTIONS[tone]}
+
+AUDIENCE: ${AUDIENCE_INSTRUCTIONS[audience]}
 
 LENGTH: ${LENGTH_INSTRUCTIONS[length]}
 
@@ -113,7 +123,8 @@ export async function generateRepurposedContent(
     extractedContent: ExtractedContent,
     tone: ToneOption = "professional",
     length: LengthOption = "medium",
-    platforms: PlatformOption[] = ["linkedin", "twitter", "youtube", "seo"]
+    platforms: PlatformOption[] = ["linkedin", "twitter", "youtube", "seo"],
+    audience: AudienceOption = "general"
 ): Promise<RepurposedContent> {
     if (!process.env.OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not configured. Please set it in your environment variables.");
@@ -127,12 +138,12 @@ export async function generateRepurposedContent(
     console.log(`Generating content with model: ${primaryModel} (Platforms: ${platforms.join(", ")}, Fallback: ${fallbackModel || "None"})`);
 
     try {
-        return await callAI(primaryModel, tone, length, extractedContent, platforms);
+        return await callAI(primaryModel, tone, length, extractedContent, platforms, audience);
     } catch (error) {
         if (fallbackModel && primaryModel !== fallbackModel) {
             console.warn(`Primary model ${primaryModel} failed. Switching to fallback ${fallbackModel}. Error:`, error);
             try {
-                return await callAI(fallbackModel, tone, length, extractedContent, platforms);
+                return await callAI(fallbackModel, tone, length, extractedContent, platforms, audience);
             } catch (fallbackError) {
                 console.error(`Fallback model ${fallbackModel} also failed.`, fallbackError);
                 throw fallbackError; // Throw the fallback error if both fail
@@ -147,13 +158,14 @@ async function callAI(
     tone: ToneOption,
     length: LengthOption,
     extractedContent: ExtractedContent,
-    platforms: PlatformOption[]
+    platforms: PlatformOption[],
+    audience: AudienceOption
 ): Promise<RepurposedContent> {
     try {
         const completion = await openai.chat.completions.create({
             model: model,
             messages: [
-                { role: "system", content: buildSystemPrompt(tone, length, platforms) },
+                { role: "system", content: buildSystemPrompt(tone, length, platforms, audience) },
                 { role: "user", content: buildUserPrompt(extractedContent, platforms) },
             ],
             response_format: { type: "json_object" },

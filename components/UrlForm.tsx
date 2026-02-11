@@ -12,16 +12,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { ToneOption, LengthOption, PlatformOption } from "@/types";
+import type { ToneOption, LengthOption, PlatformOption, AudienceOption } from "@/types";
 
 interface UrlFormProps {
-    onSubmit: (url: string, tone: ToneOption, length: LengthOption, platforms: PlatformOption[]) => void;
+    onSubmit: (url: string, tone: ToneOption, length: LengthOption, platforms: PlatformOption[], audience: AudienceOption) => void;
     isLoading: boolean;
 }
 
 export function UrlForm({ onSubmit, isLoading }: UrlFormProps) {
     const [url, setUrl] = useState("");
     const [tone, setTone] = useState<ToneOption>("professional");
+    const [audience, setAudience] = useState<AudienceOption>("general");
     const [length, setLength] = useState<LengthOption>("medium");
     const [platforms, setPlatforms] = useState<PlatformOption[]>(["linkedin", "twitter", "seo", "youtube"]);
     const [error, setError] = useState("");
@@ -67,13 +68,14 @@ export function UrlForm({ onSubmit, isLoading }: UrlFormProps) {
             return;
         }
 
-        onSubmit(normalizedUrl, tone, length, platforms);
+        onSubmit(normalizedUrl, tone, length, platforms, audience);
     };
 
     const toneIcons: Record<ToneOption, React.ReactNode> = {
         professional: <Sparkles className="h-4 w-4" />,
         bold: <Zap className="h-4 w-4" />,
         analytical: <BarChart3 className="h-4 w-4" />,
+        casual: <Check className="h-4 w-4" />, // Using Check as placeholder, or import a better icon like Smile
     };
 
     return (
@@ -134,7 +136,7 @@ export function UrlForm({ onSubmit, isLoading }: UrlFormProps) {
             </div>
 
             {/* Options Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                     <Label className="text-sm font-medium text-foreground/90 flex items-center gap-2">
                         {toneIcons[tone]}
@@ -152,6 +154,25 @@ export function UrlForm({ onSubmit, isLoading }: UrlFormProps) {
                             <SelectItem value="professional">Professional</SelectItem>
                             <SelectItem value="bold">Bold & Provocative</SelectItem>
                             <SelectItem value="analytical">Analytical</SelectItem>
+                            <SelectItem value="casual">Casual & Friendly</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground/90">Target Audience</Label>
+                    <Select
+                        value={audience}
+                        onValueChange={(v) => setAudience(v as AudienceOption)}
+                        disabled={isLoading}
+                    >
+                        <SelectTrigger className="bg-background/90 backdrop-blur-sm border-border/60">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="general">General Audience</SelectItem>
+                            <SelectItem value="B2B">Business (B2B)</SelectItem>
+                            <SelectItem value="B2C">Consumer (B2C)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
