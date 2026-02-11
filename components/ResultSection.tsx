@@ -25,34 +25,63 @@ export function ResultSection({ data }: ResultSectionProps) {
 
     const defaultTab = availablePlatforms[0] || "linkedin";
 
+    const formatRepurposedContent = (data: RepurposedContent, format: "markdown" | "text") => {
+        let output = "";
+        const timestamp = new Date().toLocaleString();
+
+        if (format === "markdown") {
+            output += `# Repurposed Content\n\nGenerated on: ${timestamp}\n\n---\n\n`;
+
+            if (data.linkedin) {
+                output += `## LinkedIn Posts\n\n### 📚 Educational\n${data.linkedin.educational}\n\n### 🔥 Contrarian\n${data.linkedin.controversial}\n\n### 💡 Personal Hook\n${data.linkedin.personal}\n\n---\n\n`;
+            }
+
+            if (data.twitter_hooks) {
+                output += `## Twitter/X Hooks\n\n${data.twitter_hooks.map((hook, i) => `${i + 1}. ${hook}`).join("\n\n")}\n\n---\n\n`;
+            }
+
+            if (data.meta_description) {
+                output += `## SEO Meta Description\n\n${data.meta_description}\n\n---\n\n`;
+            }
+
+            if (data.youtube) {
+                output += `## YouTube Video Content\n\n**Title:** ${data.youtube.title}\n\n**Description:**\n${data.youtube.description}\n\n---\n\n`;
+            }
+        } else {
+            output += `REPURPOSED CONTENT\nGenerated on: ${timestamp}\n\n`;
+
+            if (data.linkedin) {
+                output += `=== LINKEDIN POSTS ===\n\n[EDUCATIONAL]\n${data.linkedin.educational}\n\n[CONTRARIAN]\n${data.linkedin.controversial}\n\n[PERSONAL]\n${data.linkedin.personal}\n\n`;
+            }
+
+            if (data.twitter_hooks) {
+                output += `=== TWITTER/X HOOKS ===\n\n${data.twitter_hooks.map((hook, i) => `${i + 1}. ${hook}`).join("\n\n")}\n\n`;
+            }
+
+            if (data.meta_description) {
+                output += `=== SEO META DESCRIPTION ===\n${data.meta_description}\n\n`;
+            }
+
+            if (data.youtube) {
+                output += `=== YOUTUBE VIDEO ===\n\nTITLE: ${data.youtube.title}\n\nDESCRIPTION:\n${data.youtube.description}\n\n`;
+            }
+        }
+
+        return output.trim();
+    };
+
     const copyAllContent = async () => {
-        let allContent = "";
-
-        if (data.linkedin) {
-            allContent += `=== LINKEDIN POSTS ===\n\n📚 Educational:\n${data.linkedin.educational}\n\n🔥 Contrarian Take:\n${data.linkedin.controversial}\n\n💡 Personal Hook:\n${data.linkedin.personal}\n\n`;
-        }
-
-        if (data.twitter_hooks) {
-            allContent += `=== TWITTER/X HOOKS ===\n\n1. ${data.twitter_hooks[0]}\n\n2. ${data.twitter_hooks[1]}\n\n3. ${data.twitter_hooks[2]}\n\n`;
-        }
-
-        if (data.meta_description) {
-            allContent += `=== SEO META DESCRIPTION ===\n${data.meta_description}\n\n`;
-        }
-
-        if (data.youtube) {
-            allContent += `=== YOUTUBE ===\n\nTitle: ${data.youtube.title}\n\nDescription:\n${data.youtube.description}`;
-        }
+        const markdown = formatRepurposedContent(data, "markdown");
 
         try {
-            await navigator.clipboard.writeText(allContent.trim());
+            await navigator.clipboard.writeText(markdown);
             setCopiedAll(true);
             toast({
-                title: "All content copied!",
-                description: "Everything has been copied to your clipboard",
+                title: "Copied as Markdown!",
+                description: "All content has been formatted and copied to your clipboard.",
             });
             setTimeout(() => setCopiedAll(false), 2000);
-        } catch {
+        } catch (error) {
             toast({
                 title: "Copy failed",
                 description: "Please try copying individual sections",
@@ -62,33 +91,8 @@ export function ResultSection({ data }: ResultSectionProps) {
     };
 
     const downloadContent = (format: "markdown" | "text") => {
-        let content = "";
-
-        if (data.linkedin) {
-            content += format === "markdown"
-                ? `## LinkedIn Posts\n\n### Educational\n${data.linkedin.educational}\n\n### Contrarian\n${data.linkedin.controversial}\n\n### Personal\n${data.linkedin.personal}\n\n`
-                : `=== LINKEDIN ===\n\n[Educational]\n${data.linkedin.educational}\n\n[Contrarian]\n${data.linkedin.controversial}\n\n[Personal]\n${data.linkedin.personal}\n\n`;
-        }
-
-        if (data.twitter_hooks) {
-            content += format === "markdown"
-                ? `## Twitter Hooks\n\n1. ${data.twitter_hooks[0]}\n2. ${data.twitter_hooks[1]}\n3. ${data.twitter_hooks[2]}\n\n`
-                : `=== TWITTER ===\n\n1. ${data.twitter_hooks[0]}\n2. ${data.twitter_hooks[1]}\n3. ${data.twitter_hooks[2]}\n\n`;
-        }
-
-        if (data.meta_description) {
-            content += format === "markdown"
-                ? `## SEO Meta Description\n\n${data.meta_description}\n\n`
-                : `=== SEO ===\n${data.meta_description}\n\n`;
-        }
-
-        if (data.youtube) {
-            content += format === "markdown"
-                ? `## YouTube Video\n\n**Title:** ${data.youtube.title}\n\n**Description:**\n${data.youtube.description}\n`
-                : `=== YOUTUBE ===\nTitle: ${data.youtube.title}\nDescription:\n${data.youtube.description}\n`;
-        }
-
-        const blob = new Blob([content], { type: "text/plain" });
+        const content = formatRepurposedContent(data, format);
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -97,53 +101,61 @@ export function ResultSection({ data }: ResultSectionProps) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        toast({
+            title: `Downloaded as ${format.toUpperCase()}`,
+            description: `The file has been saved to your downloads folder.`,
+        });
     };
 
     return (
         <div className="w-full space-y-6 animate-slide-up">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
                         Generated Content
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Click any copy button to copy to clipboard
+                        Export all content or copy individual sections
                     </p>
                 </div>
                 {/* Export Buttons */}
-                <div className="flex gap-2">
-                    <Button
-                        onClick={() => downloadContent("text")}
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2 px-2 sm:px-4"
-                        title="Download Text"
-                    >
-                        <FileText className="h-4 w-4" />
-                        <span className="hidden sm:inline">TXT</span>
-                    </Button>
-                    <Button
-                        onClick={() => downloadContent("markdown")}
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2 px-2 sm:px-4"
-                        title="Download Markdown"
-                    >
-                        <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">MD</span>
-                    </Button>
+                <div className="flex items-center gap-2">
+                    <div className="flex bg-muted/50 p-1 rounded-lg border border-border/50">
+                        <Button
+                            onClick={() => downloadContent("text")}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-2 px-3 hover:bg-background"
+                            title="Download as Text"
+                        >
+                            <FileText className="h-4 w-4" />
+                            <span className="text-xs font-medium">TXT</span>
+                        </Button>
+                        <Button
+                            onClick={() => downloadContent("markdown")}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-2 px-3 hover:bg-background text-primary"
+                            title="Download as Markdown"
+                        >
+                            <Download className="h-4 w-4" />
+                            <span className="text-xs font-medium">MD</span>
+                        </Button>
+                    </div>
                     <Button
                         onClick={copyAllContent}
                         variant="outline"
-                        className="gap-2 border-primary/30 hover:bg-primary/10"
+                        size="sm"
+                        className="h-10 gap-2 border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all"
                     >
                         {copiedAll ? (
-                            <Check className="h-4 w-4 text-green-500" />
+                            <Check className="h-4 w-4 text-green-500 animate-in zoom-in" />
                         ) : (
                             <Copy className="h-4 w-4" />
                         )}
-                        {copiedAll ? "Copied!" : "Copy All"}
+                        <span className="font-semibold">{copiedAll ? "Copied!" : "Copy All (MD)"}</span>
                     </Button>
                 </div>
             </div>
